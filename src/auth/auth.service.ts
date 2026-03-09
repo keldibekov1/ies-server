@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateAuthDto, ResetAuthDto } from './dto/create-auth.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -16,7 +12,7 @@ export class AuthService {
   ) {}
 
   async login(data: CreateAuthDto) {
-    let user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { username: data.username },
     });
 
@@ -24,7 +20,7 @@ export class AuthService {
       throw new UnauthorizedException('Username or password is incorrect');
     }
 
-    let isPasswordValid = await bcrypt.compare(data.password, user.password);
+    const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Username or password is incorrect');

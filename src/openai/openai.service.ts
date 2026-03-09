@@ -12,7 +12,7 @@ export class OpenAIService {
     });
   }
 
-  async generateText(prompt: string): Promise<string> {
+  async generateText(prompt: string) {
     try {
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -27,7 +27,7 @@ export class OpenAIService {
 
       return completion.choices[0].message.content || '';
     } catch (error) {
-      throw new Error(`OpenAI API xatosi: ${error.message}`);
+      console.log(error);
     }
   }
 }
