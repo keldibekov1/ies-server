@@ -3,10 +3,16 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEmissionDto } from './dto/create-emission.dto';
 import { UpdateEmissionDto } from './dto/update-emission.dto';
+import { OpenAIService } from 'src/openai/openai.service';
+
+export type ForecastField = 'totalEmission' | 'solidAsh' | 'nox' | 'no2' | 'no' | 'so2' | 'co';
 
 @Injectable()
 export class EmissionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly openai: OpenAIService,
+  ) {}
 
   async create(data: CreateEmissionDto) {
     const station = await this.prisma.station.findUnique({
@@ -56,6 +62,44 @@ export class EmissionService {
     });
   }
 
+  async findLatest(stationId?: string, year?: number, month?: number) {
+    if ((year && !month) || (!year && month)) {
+      throw new BadRequestException('year va month birga yuborilishi kerak');
+    }
+
+    let emission;
+
+    if (year && month) {
+      emission = await this.prisma.emissionRecord.findFirst({
+        where: {
+          ...(stationId && { stationId }),
+          year,
+          month,
+        },
+        include: {
+          station: true,
+        },
+      });
+    } else {
+      emission = await this.prisma.emissionRecord.findFirst({
+        where: {
+          ...(stationId && { stationId }),
+        },
+        include: {
+          station: true,
+        },
+        orderBy: [{ year: 'desc' }, { month: 'desc' }],
+      });
+    }
+
+    if (!emission) {
+      throw new NotFoundException('Emission ma’lumotlari topilmadi');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return emission;
+  }
+
   async findOne(id: string) {
     const emission = await this.prisma.emissionRecord.findUnique({
       where: { id },
@@ -96,6 +140,31 @@ export class EmissionService {
         totalEmission,
       },
     });
+  }
+
+  async forecast(stationId: string, field: ForecastField, months: number) {
+    const records = await this.prisma.emissionRecord.findMany({
+      where: { stationId },
+      orderBy: [{ year: 'asc' }, { month: 'asc' }],
+    });
+
+    if (!records.length) {
+      throw new NotFoundException('Ma’lumot topilmadi');
+    }
+
+    const history = records.map((r) => ({
+      year: r.year,
+      month: r.month,
+      value: Number(r[field]),
+    }));
+
+    const aiResult = await this.openai.forecast(field, history, months);
+
+    return {
+      field,
+      history,
+      result: aiResult,
+    };
   }
 
   async remove(id: string) {
