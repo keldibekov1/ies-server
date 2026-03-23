@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -24,6 +24,7 @@ model Station {
   updatedAt DateTime @updatedAt
 
   emissions EmissionRecord[]
+  filters   Filter[]
 }
 
 model EmissionRecord {
@@ -52,4 +53,21 @@ model EmissionRecord {
   @@unique([stationId, year, month], name: "station_year_month_unique")
   @@index([year, month])
   @@index([stationId])
+}
+model Filter {
+  id String @id @default(uuid())
+
+  stationId String
+  station   Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
+
+  substance String
+
+  beforeCleaning Decimal @db.Decimal(16, 5)
+  afterCleaning  Decimal @db.Decimal(16, 5)
+
+  efficiencyProject Decimal @db.Decimal(15, 4)
+  efficiencyActual  Decimal @db.Decimal(15, 4)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

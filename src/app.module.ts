@@ -9,6 +9,7 @@ import { OpenAIModule } from './openai/openai.module';
 import { OpenAIController } from './openai/openai.controller';
 import { StationModule } from './station/station.module';
 import { EmissionModule } from './emission/emission.module';
+import { FiltersModule } from './filters/filters.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EmissionModule } from './emission/emission.module';
     OpenAIModule,
     StationModule,
     EmissionModule,
+    FiltersModule,
   ],
   controllers: [AppController, OpenAIController],
   providers: [AppService],
