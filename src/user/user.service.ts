@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateOwnProfileDto, UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
@@ -45,6 +45,32 @@ export class UserService {
     }
 
     return user;
+  }
+  async updateOwnProfile(userId: string, data: UpdateOwnProfileDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (data.username && data.username !== user.username) {
+      const exists = await this.prisma.user.findUnique({ where: { username: data.username } });
+      if (exists) {
+        throw new ConflictException('Username already exists');
+      }
+    }
+
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+
+    const { password, ...result } = updatedUser;
+    return result;
   }
 
   async update(id: string, data: UpdateUserDto) {
