@@ -167,6 +167,12 @@ export class EmissionService {
     };
   }
 
+  async getAllWithStation() {
+    return this.prisma.emissionRecord.findMany({
+      include: { station: true },
+    });
+  }
+
   async remove(id: string) {
     const emission = await this.prisma.emissionRecord.findUnique({
       where: { id },
