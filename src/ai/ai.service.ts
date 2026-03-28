@@ -160,6 +160,8 @@ ${formattedData}
 - Raqamlar bilan asosla
 - Umumiy gap yozma
 - Data scientist kabi yoz
+- BARCHA 9 bo'limni to'liq yoz, hech birini o'tkazib yuborma
+- Executive Summary ni ham yoz      
 `;
 
     return this.openai.generateText(prompt);
