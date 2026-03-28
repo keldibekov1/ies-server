@@ -4,6 +4,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEmissionDto } from './dto/create-emission.dto';
 import { UpdateEmissionDto } from './dto/update-emission.dto';
 import { OpenAIService } from 'src/openai/openai.service';
+import * as ExcelJS from 'exceljs';
+import { Response } from 'express';
 
 export type ForecastField = 'totalEmission' | 'solidAsh' | 'nox' | 'no2' | 'no' | 'so2' | 'co';
 
@@ -185,5 +187,66 @@ export class EmissionService {
     return this.prisma.emissionRecord.delete({
       where: { id },
     });
+  }
+
+  async exportToExcel(res: Response, stationId?: string, year?: number) {
+    const records = await this.prisma.emissionRecord.findMany({
+      where: {
+        ...(stationId && { stationId }),
+        ...(year && { year }),
+      },
+      include: { station: true },
+      orderBy: [{ year: 'desc' }, { month: 'asc' }],
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Emissions');
+
+    sheet.columns = [
+      { header: 'Stansiya', key: 'station', width: 20 },
+      { header: 'Yil', key: 'year', width: 10 },
+      { header: 'Oy', key: 'month', width: 10 },
+      { header: 'Jami (totalEmission)', key: 'totalEmission', width: 20 },
+      { header: 'Solid Ash', key: 'solidAsh', width: 15 },
+      { header: 'NOx', key: 'nox', width: 10 },
+      { header: 'NO2', key: 'no2', width: 10 },
+      { header: 'NO', key: 'no', width: 10 },
+      { header: 'SO2', key: 'so2', width: 10 },
+      { header: 'CO', key: 'co', width: 10 },
+    ];
+
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2563EB' },
+      };
+      cell.alignment = { horizontal: 'center' };
+    });
+
+    records.forEach((r) => {
+      sheet.addRow({
+        station: r.station?.name ?? r.stationId,
+        year: r.year,
+        month: r.month,
+        totalEmission: Number(r.totalEmission),
+        solidAsh: Number(r.solidAsh),
+        nox: Number(r.nox),
+        no2: Number(r.no2),
+        no: Number(r.no),
+        so2: Number(r.so2),
+        co: Number(r.co),
+      });
+    });
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="emissions_${Date.now()}.xlsx"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
   }
 }

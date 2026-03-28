@@ -3,6 +3,8 @@ import { EmissionService, ForecastField } from './emission.service';
 import { CreateEmissionDto } from './dto/create-emission.dto';
 import { UpdateEmissionDto } from './dto/update-emission.dto';
 import { ApiQuery } from '@nestjs/swagger';
+import { Res } from '@nestjs/common';
+import { Response } from 'express';
 
 @Controller('emission')
 export class EmissionController {
@@ -46,6 +48,17 @@ export class EmissionController {
     @Query('months') months: string,
   ) {
     return this.emissionService.forecast(stationId, field as ForecastField, Number(months));
+  }
+
+  @ApiQuery({ name: 'stationId', required: false })
+  @ApiQuery({ name: 'year', required: false, type: Number })
+  @Get('export/excel')
+  async exportExcel(
+    @Res() res: Response,
+    @Query('stationId') stationId?: string,
+    @Query('year') year?: string,
+  ) {
+    return this.emissionService.exportToExcel(res, stationId, year ? Number(year) : undefined);
   }
 
   @Get(':id')
