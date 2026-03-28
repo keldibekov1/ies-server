@@ -14,4 +14,9 @@ export class AiController {
   comparison() {
     return this.aiService.comparison();
   }
+
+  @Get('advanced-forecast')
+  advancedForecast(@Query('stationId') stationId: string) {
+    return this.aiService.advancedForecastAI(stationId);
+  }
 }
