@@ -32,6 +32,21 @@ export class UserService {
     return await this.prisma.user.findMany({ omit: { password: true } });
   }
 
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      omit: {
+        password: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: id },

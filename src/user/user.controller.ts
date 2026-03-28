@@ -18,6 +18,13 @@ export class UserController {
     return this.userService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getMe(@Req() req) {
+    const userId = req.user.id;
+    return this.userService.getMe(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
